@@ -8,7 +8,7 @@ from time import sleep
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from colorama import init, Fore
-import requests, json
+import requests, json, os
 from modules.extractor import extractor, extract_content
 
 init(autoreset=True)
@@ -93,6 +93,9 @@ def spotify_downloader(url):
     song_name = json_data['song_name']
     artist_name = json_data['artist']
     # album_name = json_data['album']
+    
+    if not os.path.exists("content"):
+        os.makedirs("content")
     
     if download_url:
         sec_response = requests.get(download_url, headers=headers, cookies=cookies)
