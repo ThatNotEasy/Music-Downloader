@@ -56,5 +56,8 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    logger.add("spotify_downloader.log", format="{time} {level} {message}", level="INFO", rotation="10 MB")
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+    logger.add("logs/spotify_downloader.log", format="{time} {level} {message}", level="INFO", rotation="10 MB")
+
     main()
