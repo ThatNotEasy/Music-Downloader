@@ -4,38 +4,30 @@ import argparse
 import platform
 from colorama import Fore
 from modules.banners import banners
-from modules.spotify import spotify_downloader, fetching_spotify
+from modules.spotify import fetching_spotify
+from loguru import logger
 
 def clear_terminal():
-    if platform.system() == 'Windows':
-        os.system('cls')
-    else:
-        os.system('clear')
+    """Clear the terminal screen."""
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
 
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Spotify Downloader")
-    parser.add_argument('-u', '--url', required=False, 
-                        help="The Spotify album or track URL")
-    parser.add_argument('-f', '--file', required=False, 
-                        help="A file containing a list of Spotify album/track URLs, one per line")
+    parser.add_argument('-u', '--url', help="The Spotify album or track URL")
+    parser.add_argument('-f', '--file', help="A file containing a list of Spotify album/track URLs, one per line")
     return parser.parse_args()
 
 def download_from_url(url):
-    print(f"Downloading from URL: {url}...")
-    album_url, track_data = fetching_spotify(url)
-
-    if track_data:
-        for track in track_data:
-            track_number, title, artist, download_link, token = track
-            print(f"{Fore.RED}[DOWNLOADER]: {Fore.GREEN}{title} {Fore.YELLOW}BY {Fore.GREEN}{artist}...")
-            spotify_downloader(download_link)
-    else:
-        print(f"{Fore.RED}Error: No valid track data found for {url}.")
+    """Download music from a Spotify URL."""
+    logger.info(f"Downloading from URL: {url}")
+    fetching_spotify(url)
+    print(f"{Fore.GREEN}Downloaded: {url}")
 
 def download_from_file(file_path):
     """Download music from a file containing Spotify URLs."""
     if not os.path.isfile(file_path):
+        logger.error(f"File {file_path} does not exist.")
         print(f"{Fore.RED}Error: File {file_path} does not exist.")
         return
 
@@ -45,6 +37,8 @@ def download_from_file(file_path):
             url = url.strip()
             if url:
                 download_from_url(url)
+            else:
+                logger.warning("Skipped empty line or invalid URL format.")
 
 def main():
     clear_terminal()
@@ -62,4 +56,5 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
+    logger.add("spotify_downloader.log", format="{time} {level} {message}", level="INFO", rotation="10 MB")
     main()

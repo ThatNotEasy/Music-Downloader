@@ -1,53 +1,49 @@
 from bs4 import BeautifulSoup
 import re
 
-def detect_artist_name(text):
-    match = re.search(r'([A-Z]+)([A-Z][a-z].*)', text)
-    if match:
-        title = match.group(1)
-        artist_name = match.group(2)
-        artist_name = artist_name.strip().title()
-        artist_name = artist_name.replace(" ", "_")
-        return title, artist_name
-    else:
-        return None, None
-
-def extractor(response):
+def get_tracks_number(response):
     soup = BeautifulSoup(response, 'html.parser')
-    songs = soup.find_all('div', class_='grid-container')
-    track_data = []
-    
-    for song in songs:
-        try:
-            form = song.find('form')
-            token_input = form.find('input', {'name': 'token'}) if form else None
-            token = token_input.get('value') if token_input else None
+    number_spans = soup.find_all('span', style="font-size: 18px;color: green;")
+    numbers = []
+    for number_span in number_spans:
+        number_text = number_span.get_text(strip=True)
+        match = re.match(r"(\d+):", number_text)
+        if match:
+            numbers.append(match.group(1))
+    return numbers
 
-            track_number = song.find('div', class_='grid-text').get_text(strip=True)
-            title_and_artist = song.find_all('div', class_='grid-text')[1].get_text(strip=True)
-            download_button = form.find('input', {'name': 'track'}) if form else None
-            download_link = download_button['value'] if download_button else None
+def extract_urls(response):
+    soup = BeautifulSoup(response, 'html.parser')
+    hidden_inputs = soup.find_all('input', type='hidden')
+    track_urls = []
+    for input_tag in hidden_inputs:
+        url = input_tag.get('value')
+        if url and re.match(r'https?://.*track', url):
+            track_urls.append(url)
+    return track_urls
 
-            if track_number and title_and_artist and token:
-                title, artist = detect_artist_name(title_and_artist)
-                track_data.append((track_number, title, artist, download_link, token))
-            else:
-                print(f"Error: Missing essential data for track: {track_number}")
-
-        except Exception as e:
-            print(f"Error processing song: {e}")
-    
-    return track_data
-
-
-def extract_content(response):
-    response_text = response.decode('utf-8')
-    mp3_url_pattern = r'https://api\.spotifymate\.com/[^\s]*\.mp3[^\s]*'
-    cover_url_pattern = r'https://spotifymate\.com/dl\?url=[^&]*&title=[^&]*'
-    mp3_urls = re.findall(mp3_url_pattern, response_text)
-    cover_urls = re.findall(cover_url_pattern, response_text)
-    if not mp3_urls:
-        print("No MP3 URLs found.")
-    if not cover_urls:
-        print("No cover URLs found.")
-    return mp3_urls, cover_urls
+def get_tracks_and_artists(response):
+    track_numbers = get_tracks_number(response)
+    soup = BeautifulSoup(response, 'html.parser')
+    track_urls = extract_urls(response)
+    grid_items = soup.find_all('div', class_='grid-text')
+    album_data = []
+    track_index = 0
+    for grid_item in grid_items:
+        span_tag = grid_item.find('span')
+        if span_tag:
+            span_tag.attrs.pop('style', None)
+            album_name = span_tag.get_text(strip=True)
+            artist_name = grid_item.find('br').next_sibling.strip() if grid_item.find('br') else ''
+            if album_name and (not album_name[0].isdigit() or ':' not in album_name):
+                track_data = {
+                    "track_name": album_name,
+                    "artist_name": artist_name
+                }
+                if track_index < len(track_numbers):
+                    track_data["track_number"] = track_numbers[track_index]
+                    track_index += 1
+                if track_index <= len(track_urls):
+                    track_data["track_url"] = track_urls[track_index - 1]
+                album_data.append(track_data)
+    return album_data

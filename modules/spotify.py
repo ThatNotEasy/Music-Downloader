@@ -4,12 +4,12 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from time import sleep
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from colorama import init, Fore
 import requests, json, os
-from modules.extractor import extractor, extract_content
+from tqdm import tqdm
+from modules.extractor import extract_urls, get_tracks_and_artists
 
 init(autoreset=True)
 
@@ -19,47 +19,48 @@ def fetching_spotify(url):
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
+        options.add_argument("--disable-webgl")
 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
         driver.get("https://spotifymate.com/")
-
-        input_url = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "url")))
-
+        input_url = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.ID, "url")))
+        
         if input_url:
             input_url.send_keys(url)
         else:
             print(f"{Fore.RED}Error: URL input field not found!")
-            return None, None
+            return
 
-        download_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "send")))
+        download_button = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, "send")))
         download_button.click()
-
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, "grid-container")))
-
+        WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CLASS_NAME, "grid-container")))
         page_source = driver.page_source
-        track_data = extractor(page_source)
+        track_urls = extract_urls(page_source)
+        data = get_tracks_and_artists(page_source)
+        
+        if data:
+            print(f"{Fore.YELLOW}[Spotify-Downloader]: {Fore.RED}NUM   | {Fore.RED}TRACK NAME                    | {Fore.RED}ARTIST                    | {Fore.RED}TRACK URL{Fore.RESET}")
+            print(f'{Fore.MAGENTA}.++' + '=' * 170 + '++.' + Fore.RESET)
+            for idx, track in enumerate(data):
+                track_url = track_urls[idx] if idx < len(track_urls) else "N/A"
+                print(f"{Fore.YELLOW}[Spotify-Downloader]: {Fore.RED}{track['track_number']: <4} {Fore.WHITE}| "
+                      f"{Fore.GREEN}{track['track_name']: <30} {Fore.WHITE}| "
+                      f"{Fore.GREEN}{track['artist_name']: <25} {Fore.WHITE}| "
+                      f"{Fore.GREEN}{track_url}{Fore.RESET}")
+                print(f'{Fore.MAGENTA}.++' + '=' * 170 + '++.' + Fore.RESET)
 
-        if track_data:
-            for track in track_data:
-                track_number, title, artist, download_link, token = track
-                print(f"{Fore.YELLOW}Track:{Fore.GREEN} {track_number}")
-                print(f"{Fore.YELLOW}Title:{Fore.GREEN} {title}")
-                print(f"{Fore.YELLOW}Artist:{Fore.GREEN} {artist}")
-                print(f"{Fore.YELLOW}Token:{Fore.GREEN} {token}")
-                print(f"{Fore.YELLOW}Download Link:{Fore.GREEN} {download_link}")
-                print('-' * 40)
-            return url, track_data
+                # Download each track
+                spotify_downloader(track_url, track['track_name'], track['artist_name'])
+                
         else:
-            print(f"{Fore.RED}Error: Failed to extract valid data.")
-
+            print(f"{Fore.RED}No track data found.")
     except Exception as e:
         print(f"{Fore.RED}Error occurred: {e}")
     finally:
         driver.quit()
 
 
-def spotify_downloader(url):
+def spotify_downloader(url, track_name, artist_name):
     cookies = {
         'cf_clearance': 'yae64EVM9IoaImZw4E_9Gt9I1Buo__njjzF6xOg2Vpw-1731033213-1.2.1.1-NrO_ZMAV5PRmAPi6IEiwZ88H32_VkldEodnokrKqDVa6P6XfY8txrK1_l5Ma4PqN3_TOjXsjQL9svFJ.oUV.BnhbTg2_MXz7NTmDllKF9QIjSGw0p1Ytmoa9D7zT_eqlak_W0KYhPPuO7aT_ufyAxpbeBXP.FLWmng6SiHaLx11CgereLibTRlJO4YIwBctJvEMlX8g1ZoNB2A5KgD9C.lmq6ALWj.ZeNur6Jlria.w6XXE35A7zYxPnnxShxf0j827OsHkx95qg8o4_UInIbOMbTyPJCxgisFqGkaKSsY.uSsvWZqPDzDynVA7vDyfdo3fs54tvsbLeJ61WMQnVCzzFPPI5PP_zDiTUhvGD2HntHRRvU2gPxeG1hYyRBnuIFpmTn1f4IjXhG4m4B3iTfBCKQedBCKVYTvK_2KsgjTEQkoG9E1OktIO11OIKIY6J',
     }
@@ -84,26 +85,47 @@ def spotify_downloader(url):
         'sec-fetch-site': 'same-origin',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
     }
+    if not url:
+        print(f"{Fore.RED}Error: No data returned from fetching_spotify.")
+        return
 
-    params = {'url': url,}
+    params = {'url': url}
     response = requests.get('https://tatsumi-crew.net/API/spotify.php', params=params, cookies=cookies, headers=headers)
-    data = response.text
-    json_data = json.loads(data)
-    download_url = json_data['urlDownload']
-    song_name = json_data['song_name']
-    artist_name = json_data['artist']
-    # album_name = json_data['album']
     
+    try:
+        json_data = response.json()
+        download_url = json_data['urlDownload']
+        song_name = json_data['song_name']
+        artist_name = json_data['artist']
+    except (ValueError, KeyError) as e:
+        print(f"{Fore.RED}Error parsing response: {e}")
+        return
+
     if not os.path.exists("content"):
         os.makedirs("content")
     
     if download_url:
-        sec_response = requests.get(download_url, headers=headers, cookies=cookies)
-        if sec_response.status_code == 200:
-            with open(f"{song_name}_{artist_name}.mp3", 'wb') as f:
-                f.write("content/" + sec_response.content)
-            print(f"{Fore.GREEN}Download successful! File saved as '{song_name}_{artist_name}.mp3'")
-        else:
-            print(f"{Fore.RED}Error: Download failed. Status code: {sec_response.status_code}")
+        with requests.get(download_url, headers=headers, cookies=cookies, stream=True) as sec_response:
+            if sec_response.status_code == 200:
+                total_size = int(sec_response.headers.get('content-length', 0))
+                new_track_name = track_name.replace(" ", "_")
+                new_artist_name = artist_name.replace(" ", "_")
+                file_path = f"content/{new_track_name}_{new_artist_name}.mp3"
+                
+                with open(file_path, 'wb') as f, tqdm(
+                    desc=f"Downloading {song_name} by {artist_name}",
+                    total=total_size,
+                    unit='B',
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    colour='green'
+                ) as progress_bar:
+                    for chunk in sec_response.iter_content(chunk_size=1024):
+                        f.write(chunk)
+                        progress_bar.update(len(chunk))
+                
+                print(f"{Fore.GREEN}Download successful! File saved as '{file_path}\n'")
+            else:
+                print(f"{Fore.RED}Error: Download failed. Status code: {sec_response.status_code}")
     else:
         print(f"{Fore.RED}Error: No download URL found.")
