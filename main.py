@@ -5,29 +5,46 @@ import platform
 from colorama import Fore
 from modules.banners import banners
 from modules.spotify import fetching_spotify
-from loguru import logger
+from modules.soundcloud import fetching_soundcloud
+from modules.logging import setup_logging
+
+logging = setup_logging()
 
 def clear_terminal():
-    """Clear the terminal screen."""
     os.system('cls' if platform.system() == 'Windows' else 'clear')
 
 def parse_args():
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="Spotify Downloader")
-    parser.add_argument('-u', '--url', help="The Spotify album or track URL")
-    parser.add_argument('-f', '--file', help="A file containing a list of Spotify album/track URLs, one per line")
+    parser = argparse.ArgumentParser(
+        description="Music Downloader: Download tracks from Spotify or SoundCloud using URLs."
+    )
+    parser.add_argument(
+        '-u', '--url', 
+        help="The album or track URL (Spotify or SoundCloud). Example: 'https://spotify.com/track/xyz' or 'https://soundcloud.com/artist/song'."
+    )
+    parser.add_argument(
+        '-f', '--file', 
+        help="A file containing a list of album/track URLs, one per line. Each line should contain a valid Spotify or SoundCloud URL."
+    )
     return parser.parse_args()
 
 def download_from_url(url):
-    """Download music from a Spotify URL."""
-    logger.info(f"Downloading from URL: {url}")
-    fetching_spotify(url)
-    print(f"{Fore.GREEN}Downloaded: {url}")
+    if 'spotify.com' in url:
+        clear_terminal()
+        banners()
+        fetching_spotify(url)
+    elif 'soundcloud.com' in url:
+        clear_terminal()
+        banners()
+        fetching_soundcloud(url)
+    else:
+        clear_terminal()
+        banners()
+        logging.warning("Unsupported URL")
+        print(f"{Fore.RED}Error: Unsupported URL. Please provide a valid Spotify or SoundCloud URL.")
 
 def download_from_file(file_path):
-    """Download music from a file containing Spotify URLs."""
     if not os.path.isfile(file_path):
-        logger.error(f"File {file_path} does not exist.")
+        logging.error(f"File {file_path} does not exist.")
         print(f"{Fore.RED}Error: File {file_path} does not exist.")
         return
 
@@ -38,7 +55,7 @@ def download_from_file(file_path):
             if url:
                 download_from_url(url)
             else:
-                logger.warning("Skipped empty line or invalid URL format.")
+                logging.warning("Skipped empty line or invalid URL format.")
 
 def main():
     clear_terminal()
@@ -52,12 +69,10 @@ def main():
         download_from_file(args.file)
 
     else:
-        print(f"{Fore.RED}Error: You must provide either a URL or a file with URLs.")
+        print(f"{Fore.WHITE}Error: You must provide either a URL or a file with URLs. Or see --help\n")
         sys.exit(1)
 
 if __name__ == "__main__":
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-    logger.add("logs/spotify_downloader.log", format="{time} {level} {message}", level="INFO", rotation="10 MB")
-
+    clear_terminal()
+    banners()
     main()
