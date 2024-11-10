@@ -1,4 +1,4 @@
-# Spotify-Downloader
+# Music-Downloader
 
 A Python-based tool for downloading Spotify tracks and albums as MP3 files. This tool extracts the direct download link from Spotify URLs, allowing users to save music locally with the song and artist names in the filename.
 
