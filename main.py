@@ -16,15 +16,26 @@ def clear_terminal():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Music Downloader: Download tracks from Spotify or SoundCloud using URLs."
+        description="Music Downloader: Download tracks or albums from Spotify, SoundCloud, or Apple Music using URLs.",
+        epilog=(
+            "Example usage:\n"
+            "  python main.py -u 'https://spotify.com/track/xyz'\n"
+            "  python main.py -u 'https://soundcloud.com/artist/song'\n"
+            "  python main.py -u 'https://music.apple.com/us/album/blue/123456789'\n"
+            "  python main.py -f urls.txt\n\n"
+            "URLs in the file (urls.txt) should be one per line, with each line containing a valid Spotify, SoundCloud, or Apple Music URL.\n"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
         '-u', '--url', 
-        help="The album or track URL (Spotify or SoundCloud). Example: 'https://spotify.com/track/xyz' or 'https://soundcloud.com/artist/song'."
+        help="The album or track URL (Spotify, SoundCloud, or Apple Music)."
+             "\nExample: 'https://spotify.com/track/xyz' or 'https://soundcloud.com/artist/song'."
     )
     parser.add_argument(
         '-f', '--file', 
-        help="A file containing a list of album/track URLs, one per line. Each line should contain a valid Spotify or SoundCloud URL."
+        help="A file containing a list of album/track URLs, one per line."
+             "\nEach line should contain a valid Spotify, SoundCloud, or Apple Music URL."
     )
     return parser.parse_args()
 
@@ -42,13 +53,13 @@ def download_from_url(url):
     elif 'music.apple.com' in url:
         clear_terminal()
         banners()
-        logging.info("APPLE SERVICE EXECUTING!")
+        logging.info("APPLE MUSIC SERVICE EXECUTING!")
         fetching_applemusic(url)
     else:
         clear_terminal()
         banners()
         logging.warning("Unsupported URL")
-        print(f"{Fore.RED}Error: Unsupported URL. Please provide a valid Spotify or SoundCloud URL.")
+        print(f"{Fore.RED}Error: Unsupported URL. Please provide a valid Spotify, SoundCloud, or Apple Music URL.")
 
 def download_from_file(file_path):
     if not os.path.isfile(file_path):
@@ -77,7 +88,8 @@ def main():
         download_from_file(args.file)
 
     else:
-        print(f"{Fore.WHITE}Error: You must provide either a URL or a file with URLs. Or see --help\n")
+        print(f"{Fore.WHITE}Error: You must provide either a URL or a file with URLs.\n"
+              f"Use -h or --help to see usage information.\n")
         sys.exit(1)
 
 if __name__ == "__main__":
