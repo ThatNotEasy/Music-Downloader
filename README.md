@@ -1,18 +1,41 @@
-# Music-Downloader
+# Music Downloader 🎵
+- Music Downloader is an automated tool designed to download and convert music from platforms like Apple Music. Leveraging Selenium and other supporting libraries, this application fetches song information, downloads files in MP3 format, and converts them to high-quality FLAC format.
 
-A Python-based tool for downloading Spotify tracks and albums as MP3 files. This tool extracts the direct download link from Spotify URLs, allowing users to save music locally with the song and artist names in the filename.
+# Key Features 🚀
+- Automated Music Download: Using Selenium to interact with the music source site, the application allows users to input an Apple Music URL and download the track automatically.
+- Metadata Extraction: The tool extracts song metadata, such as title and artist, directly from the source page, ensuring each downloaded file is complete with detailed information.
+- High-Quality Conversion: Downloaded MP3 files can be converted to FLAC format using ffmpeg for improved audio quality.
+- Structured Logging: Each process includes logging to provide detailed feedback on download status, conversion, and error handling.
 
-## Features
-- **Spotify URL Processing**: Supports both individual track and album URLs.
-- **MP3 File Download**: Retrieves MP3 files and saves them locally.
-- **Dynamic Filenames**: Automatically names files using the song's title and artist, replacing spaces with underscores.
-- **Error Handling**: Provides clear error messages in case of failed downloads.
+# Technologies Used 🛠️
+- Python: The primary programming language for automation and file management.
+- Selenium: Controls the browser to interact with the music source site.
+- BeautifulSoup: Parses HTML to retrieve song data.
+- ffmpeg: Used for audio conversion from MP3 to FLAC (requires separate installation).
 
-## Installation
-- Ensure Python 3.x is installed and install the required dependencies:
-- ```pip install -r requirements.txt```
+# How to Use 📖
+- Clone the Repository:
 
-## Usage
-- ```python main.py -u "track/album url"```
-  
-![photo_2024-11-08_10-51-59](https://github.com/user-attachments/assets/26058875-6178-4a3c-b7dd-c07fbacd807b)
+```bash
+$ git clone https://github.com/ThatNotEasy/Music-Downloader.git
+$ cd Music-Downloader
+```
+
+- Install Dependencies: Make sure ffmpeg is installed and added to your system PATH.
+
+```bash
+pip install -r requirements.txt
+```
+
+- Run the Program: Enter the URL of a song from Apple Music, and the program will handle the download and conversion automatically.
+
+```bash
+python main.py -u "album/tracks url"
+```
+
+# Notes ⚠️
+- ffmpeg must be installed and added to your PATH for FLAC conversion to work correctly. Download it from the official ffmpeg website.
+- Ensure that you’re using compatible versions of Selenium and the browser driver to match your browser version.
+
+# Contributing 🤝
+- Contributions are welcome! Please fork this repository, create a new branch, and submit a pull request to propose any changes.
