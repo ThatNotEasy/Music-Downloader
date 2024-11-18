@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from colorama import Fore, Style
 from modules.logging import setup_logging
-from colorama import Fore, Style
+from modules.core import setup_driver
 from modules.downloader import drm_downloader
 import os
 
@@ -54,7 +54,7 @@ def fetching_soundcloud(url):
         title = extract_title(page_source)
         manifest = extract_m3u8(page_source)
 
-        print(f"{Fore.YELLOW}[Music-Downloader]:")
+        print(f"{Fore.YELLOW}[SoundCloud-Downloader]:")
         print(f'{Fore.MAGENTA}.++' + '=' * 70 + '++.' + Fore.RESET)
         if title and manifest:
             track_name, artist = title

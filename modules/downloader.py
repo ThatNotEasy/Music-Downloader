@@ -104,6 +104,26 @@ def spotify_downloader(url, track_name, artist_name):
         print(f"{Fore.RED}Error: No download URL found.")
 
 
+def common_downloader(download_url, filename):
+    try:
+        os.makedirs("content", exist_ok=True)
+        response = requests.get(download_url, stream=True)
+        if response.status_code == 200:
+            filepath = os.path.join("content", filename)
+            with open(filepath, "wb") as file:
+                for chunk in response.iter_content(chunk_size=1024):
+                    file.write(chunk)
+            logging.info(f"MP3 file downloaded successfully as {filename}")
+            current_file = filepath
+            new_file_convert = os.path.join("content", filename.replace(".mp3", ".flac"))
+            convert_high_quality(current_file, new_file_convert)
+            logging.info(f"File converted successfully to {new_file_convert}")
+        else:
+            logging.error(f"Failed to download file. Status code: {response.status_code}")
+    except Exception as e:
+        logging.error(f"An error occurred during download or conversion: {e}")
+        
+        
 def convert_high_quality(input_file, output_file):
     output_format = "flac"  # Default format
     sample_rate = 96000     # Default sample rate

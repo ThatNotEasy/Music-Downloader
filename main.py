@@ -6,6 +6,7 @@ from colorama import Fore
 from modules.banners import banners
 from modules.spotify import fetching_spotify
 from modules.soundcloud import fetching_soundcloud
+from modules.applemusic import fetching_applemusic
 from modules.logging import setup_logging
 
 logging = setup_logging()
@@ -31,11 +32,18 @@ def download_from_url(url):
     if 'spotify.com' in url:
         clear_terminal()
         banners()
+        logging.info("SPOTIFY SERVICE EXECUTING!")
         fetching_spotify(url)
     elif 'soundcloud.com' in url:
         clear_terminal()
         banners()
+        logging.info("SOUNDCLOUD SERVICE EXECUTING!")
         fetching_soundcloud(url)
+    elif 'music.apple.com' in url:
+        clear_terminal()
+        banners()
+        logging.info("APPLE SERVICE EXECUTING!")
+        fetching_applemusic(url)
     else:
         clear_terminal()
         banners()

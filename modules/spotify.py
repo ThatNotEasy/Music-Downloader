@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from colorama import init, Fore
+from modules.core import setup_driver
 from modules.downloader import spotify_downloader
 from modules.extractor import extract_urls, get_tracks_and_artists
 
